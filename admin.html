@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CySA+ Exam Prep</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="admin-page">
+    <div class="admin-container">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div class="admin-header-content">
+                <div class="admin-title">
+                    <h1>Admin Dashboard</h1>
+                    <p>CySA+ Exam Prep Tool</p>
+                </div>
+                <div class="admin-actions">
+                    <a href="index.html" class="btn-secondary">Back to App</a>
+                    <button class="btn-secondary" id="adminLogoutBtn">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div class="admin-loading" id="adminLoading">
+            <div class="spinner"></div>
+            <p>Verifying admin access...</p>
+        </div>
+
+        <!-- Access Denied -->
+        <div class="admin-denied" id="adminDenied" style="display:none;">
+            <h2>Access Denied</h2>
+            <p>You do not have admin privileges to view this page.</p>
+            <a href="index.html" class="btn-primary">Return to App</a>
+        </div>
+
+        <!-- Admin Content -->
+        <main class="admin-main" id="adminMain" style="display:none;">
+            <!-- Stats Overview -->
+            <section class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalUsers">0</span>
+                        <span class="stat-label">Total Users</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="todaySignups">0</span>
+                        <span class="stat-label">Today's Signups</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="weekSignups">0</span>
+                        <span class="stat-label">This Week</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="activeToday">0</span>
+                        <span class="stat-label">Active Today</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Table -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2>All Users</h2>
+                    <div class="section-actions">
+                        <input type="text" id="userSearch" placeholder="Search by email..." class="search-input">
+                        <button class="btn-secondary" id="refreshUsers">Refresh</button>
+                        <button class="btn-secondary" id="exportUsers">Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="admin-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Signup Date</th>
+                                <th>Last Login</th>
+                                <th>Status</th>
+                                <th>Admin</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span id="userCount">Showing 0 users</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CySA+ Log Analysis & CVSS Training Tool</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="logged-out">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-top">
+                <h1>CySA+ Exam Prep Tool</h1>
+                <div class="user-menu">
+                    <span class="user-email" id="userEmail"></span>
+                    <a href="admin.html" class="btn-primary btn-small admin-link" id="adminLink" style="display:none;">Admin Dashboard</a>
+                    <button class="btn-secondary btn-small" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+            <p class="subtitle">Log Analysis | CVSS Scoring | CVE Identification</p>
+            <div class="header-stats">
+                <span class="stat" id="overallScore">Overall Score: 0%</span>
+                <span class="stat" id="streakCounter">Streak: 0</span>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+            <button class="nav-btn" data-section="log-analysis">Log Analysis</button>
+            <button class="nav-btn" data-section="cvss-calculator">CVSS Calculator</button>
+            <button class="nav-btn" data-section="cve-lookup">CVE Analysis</button>
+            <button class="nav-btn" data-section="study-mode">Study Mode</button>
+            <button class="nav-btn" data-section="quiz-mode">Timed Quiz</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <h2>Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Log Analysis</h3>
+                        <div class="progress-ring" id="logProgress">
+                            <span class="progress-value">0%</span>
+                        </div>
+                        <p>Scenarios Completed: <span id="logCompleted">0</span>/20</p>
+                        <button class="btn-primary" data-goto="log-analysis">Practice Now</button>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>CVSS Scoring</h3>
+                        <div class="progress-ring" id="cvssProgress">
+                            <span class="progress-value">0%</span>
+                        </div>
+                        <p>Exercises Completed: <span id="cvssCompleted">0</span>/15</p>
+                        <button class="btn-primary" data-goto="cvss-calculator">Practice Now</button>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>CVE Analysis</h3>
+                        <div class="progress-ring" id="cveProgress">
+                            <span class="progress-value">0%</span>
+                        </div>
+                        <p>CVEs Analyzed: <span id="cveCompleted">0</span>/15</p>
+                        <button class="btn-primary" data-goto="cve-lookup">Practice Now</button>
+                    </div>
+                    <div class="dashboard-card stats-card">
+                        <h3>Performance Stats</h3>
+                        <div class="stats-list">
+                            <div class="stat-item">
+                                <span>Total Questions Answered:</span>
+                                <span id="totalAnswered">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Correct Answers:</span>
+                                <span id="totalCorrect">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Accuracy Rate:</span>
+                                <span id="accuracyRate">0%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Best Streak:</span>
+                                <span id="bestStreak">0</span>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" id="resetProgress">Reset All Progress</button>
+                    </div>
+                </div>
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div id="activityLog" class="activity-log">
+                        <p class="no-activity">No recent activity. Start practicing!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Log Analysis Section -->
+            <section id="log-analysis" class="section">
+                <h2>Log Analysis Practice</h2>
+                <div class="instructions-box">
+                    <h4>How to Complete This Exercise</h4>
+                    <ol>
+                        <li>Click <strong>"New Scenario"</strong> to load a log sample</li>
+                        <li>Carefully examine the log entries displayed - look for IP addresses, timestamps, status codes, and patterns</li>
+                        <li>Select the type of security event you believe is occurring from the options provided</li>
+                        <li>Answer any follow-up questions that appear</li>
+                        <li>Click <strong>"Submit Analysis"</strong> to check your answer and see detailed feedback</li>
+                    </ol>
+                    <p><strong>Tip:</strong> Use the difficulty and log type filters to focus on specific areas you want to practice.</p>
+                </div>
+                <div class="controls-bar">
+                    <div class="filter-group">
+                        <label>Difficulty:</label>
+                        <select id="logDifficulty">
+                            <option value="all">All Levels</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Log Type:</label>
+                        <select id="logType">
+                            <option value="all">All Types</option>
+                            <option value="firewall">Firewall</option>
+                            <option value="ids">IDS/IPS</option>
+                            <option value="webserver">Web Server</option>
+                            <option value="auth">Authentication</option>
+                            <option value="system">System Events</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="newLogScenario">New Scenario</button>
+                </div>
+
+                <div class="scenario-container">
+                    <div class="scenario-header">
+                        <span class="scenario-badge" id="logScenarioBadge">Beginner</span>
+                        <span class="scenario-type" id="logScenarioType">Firewall Log</span>
+                    </div>
+                    <div class="log-display" id="logDisplay">
+                        <pre id="logContent">Click "New Scenario" to begin analyzing logs...</pre>
+                    </div>
+                    <div class="analysis-form">
+                        <div class="question-block">
+                            <h4>What type of security event is occurring?</h4>
+                            <div class="options-grid" id="eventTypeOptions">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+                        <div class="question-block" id="additionalQuestions" style="display:none;">
+                            <!-- Additional questions populated by JS -->
+                        </div>
+                        <button class="btn-primary" id="submitLogAnalysis" disabled>Submit Analysis</button>
+                    </div>
+                    <div class="feedback-panel" id="logFeedback" style="display:none;">
+                        <!-- Feedback populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- CVSS Calculator Section -->
+            <section id="cvss-calculator" class="section">
+                <h2>CVSS Calculator Practice</h2>
+                <div class="instructions-box">
+                    <h4>How to Complete This Exercise</h4>
+                    <ol>
+                        <li>Select your preferred <strong>CVSS Version</strong> (v3.1 or v4.0)</li>
+                        <li>Click <strong>"New Vulnerability"</strong> to load a vulnerability scenario</li>
+                        <li>Read the vulnerability description carefully</li>
+                        <li>For each metric, select the value that best matches the vulnerability based on the description</li>
+                        <li>Click <strong>"Calculate Score"</strong> to see your score and compare it to the correct answer</li>
+                    </ol>
+                    <p><strong>Tip:</strong> Use "Free Calculator" mode to practice scoring without a scenario, or to calculate CVSS scores for real vulnerabilities.</p>
+                </div>
+                <div class="controls-bar">
+                    <div class="filter-group">
+                        <label>CVSS Version:</label>
+                        <select id="cvssVersion">
+                            <option value="3.1">CVSS v3.1</option>
+                            <option value="4.0">CVSS v4.0</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Mode:</label>
+                        <select id="cvssMode">
+                            <option value="practice">Practice Mode</option>
+                            <option value="calculator">Free Calculator</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="newCvssScenario">New Vulnerability</button>
+                </div>
+
+                <div class="cvss-container">
+                    <div class="vulnerability-description" id="vulnDescription">
+                        <h3>Vulnerability Scenario</h3>
+                        <p id="vulnText">Click "New Vulnerability" to start a CVSS scoring exercise...</p>
+                    </div>
+
+                    <div class="cvss-metrics" id="cvssMetrics31">
+                        <h3>CVSS v3.1 Base Metrics</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-group">
+                                <h4>Exploitability Metrics</h4>
+                                <div class="metric-item">
+                                    <label>Attack Vector (AV):</label>
+                                    <select id="av31">
+                                        <option value="">Select...</option>
+                                        <option value="N">Network (N)</option>
+                                        <option value="A">Adjacent (A)</option>
+                                        <option value="L">Local (L)</option>
+                                        <option value="P">Physical (P)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Attack Complexity (AC):</label>
+                                    <select id="ac31">
+                                        <option value="">Select...</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Privileges Required (PR):</label>
+                                    <select id="pr31">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>User Interaction (UI):</label>
+                                    <select id="ui31">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="R">Required (R)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Scope (S):</label>
+                                    <select id="s31">
+                                        <option value="">Select...</option>
+                                        <option value="U">Unchanged (U)</option>
+                                        <option value="C">Changed (C)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="metric-group">
+                                <h4>Impact Metrics</h4>
+                                <div class="metric-item">
+                                    <label>Confidentiality (C):</label>
+                                    <select id="c31">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Integrity (I):</label>
+                                    <select id="i31">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Availability (A):</label>
+                                    <select id="a31">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cvss-metrics" id="cvssMetrics40" style="display:none;">
+                        <h3>CVSS v4.0 Base Metrics</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-group">
+                                <h4>Exploitability Metrics</h4>
+                                <div class="metric-item">
+                                    <label>Attack Vector (AV):</label>
+                                    <select id="av40">
+                                        <option value="">Select...</option>
+                                        <option value="N">Network (N)</option>
+                                        <option value="A">Adjacent (A)</option>
+                                        <option value="L">Local (L)</option>
+                                        <option value="P">Physical (P)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Attack Complexity (AC):</label>
+                                    <select id="ac40">
+                                        <option value="">Select...</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Attack Requirements (AT):</label>
+                                    <select id="at40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="P">Present (P)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Privileges Required (PR):</label>
+                                    <select id="pr40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>User Interaction (UI):</label>
+                                    <select id="ui40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="P">Passive (P)</option>
+                                        <option value="A">Active (A)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="metric-group">
+                                <h4>Vulnerable System Impact</h4>
+                                <div class="metric-item">
+                                    <label>Confidentiality (VC):</label>
+                                    <select id="vc40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Integrity (VI):</label>
+                                    <select id="vi40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Availability (VA):</label>
+                                    <select id="va40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="metric-group">
+                                <h4>Subsequent System Impact</h4>
+                                <div class="metric-item">
+                                    <label>Confidentiality (SC):</label>
+                                    <select id="sc40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Integrity (SI):</label>
+                                    <select id="si40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                                <div class="metric-item">
+                                    <label>Availability (SA):</label>
+                                    <select id="sa40">
+                                        <option value="">Select...</option>
+                                        <option value="N">None (N)</option>
+                                        <option value="L">Low (L)</option>
+                                        <option value="H">High (H)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="score-display">
+                        <div class="calculated-score">
+                            <span>Your Score:</span>
+                            <span class="score-value" id="userCvssScore">--</span>
+                            <span class="severity-badge" id="userSeverity">--</span>
+                        </div>
+                        <button class="btn-primary" id="submitCvss">Submit Score</button>
+                    </div>
+
+                    <div class="feedback-panel" id="cvssFeedback" style="display:none;">
+                        <!-- CVSS feedback populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- CVE Analysis Section -->
+            <section id="cve-lookup" class="section">
+                <h2>CVE Analysis Practice</h2>
+                <div class="instructions-box">
+                    <h4>How to Complete This Exercise</h4>
+                    <ol>
+                        <li>Click <strong>"New CVE"</strong> to load a real-world vulnerability scenario</li>
+                        <li>Read the CVE description, noting the affected products, CVSS score, and vulnerability details</li>
+                        <li>Answer the questions about the vulnerability type, attack vector, and recommended mitigations</li>
+                        <li>Click <strong>"Submit Answers"</strong> to check your analysis and see the correct responses</li>
+                    </ol>
+                    <p><strong>Tip:</strong> Pay attention to keywords in the description like "remote code execution," "buffer overflow," or "SQL injection" to identify the vulnerability type.</p>
+                </div>
+                <div class="controls-bar">
+                    <div class="filter-group">
+                        <label>Difficulty:</label>
+                        <select id="cveDifficulty">
+                            <option value="all">All Levels</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Category:</label>
+                        <select id="cveCategory">
+                            <option value="all">All Categories</option>
+                            <option value="web">Web Application</option>
+                            <option value="network">Network</option>
+                            <option value="os">Operating System</option>
+                            <option value="application">Application</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="newCveScenario">New CVE</button>
+                </div>
+
+                <div class="cve-container">
+                    <div class="cve-details" id="cveDetails">
+                        <div class="cve-header">
+                            <h3 id="cveId">CVE-XXXX-XXXXX</h3>
+                            <span class="cve-badge" id="cveSeverityBadge">--</span>
+                        </div>
+                        <div class="cve-info">
+                            <p id="cveDescription">Click "New CVE" to start analyzing vulnerabilities...</p>
+                            <div class="cve-meta" id="cveMeta" style="display:none;">
+                                <p><strong>Published:</strong> <span id="cvePublished"></span></p>
+                                <p><strong>CVSS Score:</strong> <span id="cveCvssScore"></span></p>
+                                <p><strong>Affected Products:</strong> <span id="cveAffected"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cve-questions" id="cveQuestions" style="display:none;">
+                        <div class="question-block">
+                            <h4>1. What type of vulnerability is this?</h4>
+                            <div class="options-grid" id="vulnTypeOptions">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+                        <div class="question-block">
+                            <h4>2. What is the primary attack vector?</h4>
+                            <div class="options-grid" id="attackVectorOptions">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+                        <div class="question-block">
+                            <h4>3. What is the recommended mitigation?</h4>
+                            <div class="options-grid" id="mitigationOptions">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+                        <button class="btn-primary" id="submitCveAnalysis" disabled>Submit Analysis</button>
+                    </div>
+
+                    <div class="feedback-panel" id="cveFeedback" style="display:none;">
+                        <!-- CVE feedback populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Study Mode Section -->
+            <section id="study-mode" class="section">
+                <h2>Study Mode</h2>
+                <div class="instructions-box">
+                    <h4>How to Use Study Mode</h4>
+                    <ol>
+                        <li>Select a topic tab above: <strong>Log Patterns</strong>, <strong>CVSS Guide</strong>, <strong>CVE Terminology</strong>, or <strong>Attack Types</strong></li>
+                        <li>Review the reference cards - each contains examples and key indicators</li>
+                        <li>Study the example logs and patterns to recognize them in practice exercises</li>
+                        <li>Use this section as a reference while working through other modules</li>
+                    </ol>
+                    <p><strong>Tip:</strong> Review these materials before attempting the Timed Quiz to improve your scores.</p>
+                </div>
+                <div class="study-tabs">
+                    <button class="study-tab active" data-study="log-patterns">Log Patterns</button>
+                    <button class="study-tab" data-study="cvss-guide">CVSS Guide</button>
+                    <button class="study-tab" data-study="cve-terms">CVE Terminology</button>
+                    <button class="study-tab" data-study="attack-types">Attack Types</button>
+                </div>
+
+                <div class="study-content">
+                    <div id="log-patterns" class="study-panel active">
+                        <h3>Common Log Patterns</h3>
+                        <div class="study-cards">
+                            <div class="study-card">
+                                <h4>Brute Force Attack</h4>
+                                <p>Multiple failed login attempts from the same source IP in a short time period.</p>
+                                <pre class="example-log">Mar 15 10:23:45 server sshd[1234]: Failed password for admin from 192.168.1.100
+Mar 15 10:23:46 server sshd[1234]: Failed password for admin from 192.168.1.100
+Mar 15 10:23:47 server sshd[1234]: Failed password for admin from 192.168.1.100</pre>
+                                <p class="indicator"><strong>Key Indicators:</strong> Repeated failures, same username, rapid succession, same source IP</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>SQL Injection Attempt</h4>
+                                <p>HTTP requests containing SQL syntax in parameters or URI.</p>
+                                <pre class="example-log">192.168.1.50 - - [15/Mar/2024:14:23:11] "GET /products?id=1'+OR+'1'='1 HTTP/1.1" 200</pre>
+                                <p class="indicator"><strong>Key Indicators:</strong> SQL keywords (OR, UNION, SELECT), single quotes, comment sequences (--)</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Port Scanning</h4>
+                                <p>Multiple connection attempts to different ports from the same source.</p>
+                                <pre class="example-log">Mar 15 11:00:01 firewall DENY TCP 10.0.0.50:45123 -> 192.168.1.10:21
+Mar 15 11:00:01 firewall DENY TCP 10.0.0.50:45124 -> 192.168.1.10:22
+Mar 15 11:00:01 firewall DENY TCP 10.0.0.50:45125 -> 192.168.1.10:23</pre>
+                                <p class="indicator"><strong>Key Indicators:</strong> Sequential ports, rapid timing, same source, many denied connections</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Privilege Escalation</h4>
+                                <p>Attempts to gain elevated access using sudo or su commands.</p>
+                                <pre class="example-log">Mar 15 15:30:22 server sudo: user1 : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/user1 ; COMMAND=/bin/bash</pre>
+                                <p class="indicator"><strong>Key Indicators:</strong> Sudoers violations, unauthorized su attempts, privilege change events</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Data Exfiltration</h4>
+                                <p>Unusual outbound data transfers, especially to unknown destinations.</p>
+                                <pre class="example-log">Mar 15 03:00:00 firewall ALLOW TCP 192.168.1.50:55123 -> 185.123.45.67:443 bytes=15728640
+Mar 15 03:05:00 firewall ALLOW TCP 192.168.1.50:55124 -> 185.123.45.67:443 bytes=15728640</pre>
+                                <p class="indicator"><strong>Key Indicators:</strong> Large data transfers, unusual hours, unknown external IPs, repeated transfers</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Denial of Service (DoS)</h4>
+                                <p>Flood of requests from single or multiple sources causing service degradation.</p>
+                                <pre class="example-log">Mar 15 12:00:00 webserver [error] server reached MaxRequestWorkers setting
+Mar 15 12:00:01 webserver 10.0.0.100 "GET / HTTP/1.1" 503 Service Unavailable</pre>
+                                <p class="indicator"><strong>Key Indicators:</strong> High request volume, 503 errors, resource exhaustion, same request patterns</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="cvss-guide" class="study-panel">
+                        <h3>CVSS Scoring Guidelines</h3>
+                        <div class="study-cards">
+                            <div class="study-card">
+                                <h4>Attack Vector (AV)</h4>
+                                <table class="metric-table">
+                                    <tr><th>Value</th><th>Description</th></tr>
+                                    <tr><td>Network (N)</td><td>Exploitable remotely via network (e.g., internet)</td></tr>
+                                    <tr><td>Adjacent (A)</td><td>Requires same network segment (e.g., LAN, Bluetooth)</td></tr>
+                                    <tr><td>Local (L)</td><td>Requires local access to the system</td></tr>
+                                    <tr><td>Physical (P)</td><td>Requires physical access to the device</td></tr>
+                                </table>
+                            </div>
+                            <div class="study-card">
+                                <h4>Attack Complexity (AC)</h4>
+                                <table class="metric-table">
+                                    <tr><th>Value</th><th>Description</th></tr>
+                                    <tr><td>Low (L)</td><td>No special conditions required; attack is repeatable</td></tr>
+                                    <tr><td>High (H)</td><td>Requires specific conditions, timing, or preparation</td></tr>
+                                </table>
+                            </div>
+                            <div class="study-card">
+                                <h4>Privileges Required (PR)</h4>
+                                <table class="metric-table">
+                                    <tr><th>Value</th><th>Description</th></tr>
+                                    <tr><td>None (N)</td><td>No authentication or privileges needed</td></tr>
+                                    <tr><td>Low (L)</td><td>Basic user-level privileges required</td></tr>
+                                    <tr><td>High (H)</td><td>Administrative or significant privileges required</td></tr>
+                                </table>
+                            </div>
+                            <div class="study-card">
+                                <h4>User Interaction (UI)</h4>
+                                <table class="metric-table">
+                                    <tr><th>Value</th><th>Description</th></tr>
+                                    <tr><td>None (N)</td><td>Exploit works without any user action</td></tr>
+                                    <tr><td>Required (R)</td><td>User must perform some action (click link, open file)</td></tr>
+                                </table>
+                            </div>
+                            <div class="study-card">
+                                <h4>Scope (S)</h4>
+                                <table class="metric-table">
+                                    <tr><th>Value</th><th>Description</th></tr>
+                                    <tr><td>Unchanged (U)</td><td>Impact limited to vulnerable component only</td></tr>
+                                    <tr><td>Changed (C)</td><td>Impact extends beyond vulnerable component</td></tr>
+                                </table>
+                            </div>
+                            <div class="study-card">
+                                <h4>Impact Metrics (C/I/A)</h4>
+                                <table class="metric-table">
+                                    <tr><th>Value</th><th>Description</th></tr>
+                                    <tr><td>High (H)</td><td>Total loss of confidentiality/integrity/availability</td></tr>
+                                    <tr><td>Low (L)</td><td>Reduced confidentiality/integrity/availability</td></tr>
+                                    <tr><td>None (N)</td><td>No impact to this property</td></tr>
+                                </table>
+                            </div>
+                            <div class="study-card">
+                                <h4>Severity Rating Scale</h4>
+                                <table class="metric-table">
+                                    <tr><th>Score Range</th><th>Severity</th></tr>
+                                    <tr><td>0.0</td><td>None</td></tr>
+                                    <tr><td>0.1 - 3.9</td><td>Low</td></tr>
+                                    <tr><td>4.0 - 6.9</td><td>Medium</td></tr>
+                                    <tr><td>7.0 - 8.9</td><td>High</td></tr>
+                                    <tr><td>9.0 - 10.0</td><td>Critical</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="cve-terms" class="study-panel">
+                        <h3>CVE Terminology</h3>
+                        <div class="study-cards">
+                            <div class="study-card">
+                                <h4>CVE (Common Vulnerabilities and Exposures)</h4>
+                                <p>A standardized identifier for publicly known cybersecurity vulnerabilities. Format: CVE-YEAR-NUMBER</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>CWE (Common Weakness Enumeration)</h4>
+                                <p>A categorization system for software and hardware weaknesses. Examples: CWE-79 (XSS), CWE-89 (SQL Injection)</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>NVD (National Vulnerability Database)</h4>
+                                <p>US government repository of vulnerability data using CVE identifiers, including CVSS scores and references.</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Zero-Day</h4>
+                                <p>A vulnerability that is exploited before the vendor is aware or has released a patch.</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>PoC (Proof of Concept)</h4>
+                                <p>Code or method demonstrating that a vulnerability can be exploited.</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>RCE (Remote Code Execution)</h4>
+                                <p>A vulnerability allowing an attacker to execute arbitrary code on a target system remotely.</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>LPE (Local Privilege Escalation)</h4>
+                                <p>A vulnerability allowing a user to gain elevated privileges on a system they already have access to.</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>EPSS (Exploit Prediction Scoring System)</h4>
+                                <p>A model that estimates the probability that a vulnerability will be exploited in the wild.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="attack-types" class="study-panel">
+                        <h3>Common Attack Types</h3>
+                        <div class="study-cards">
+                            <div class="study-card">
+                                <h4>SQL Injection (SQLi)</h4>
+                                <p>Inserting malicious SQL code into application queries to access or manipulate database data.</p>
+                                <p><strong>Indicators:</strong> ' OR 1=1, UNION SELECT, --comment, encoded characters (%27)</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Cross-Site Scripting (XSS)</h4>
+                                <p>Injecting malicious scripts into web pages viewed by other users.</p>
+                                <p><strong>Indicators:</strong> &lt;script&gt; tags, javascript: URIs, event handlers (onerror, onload)</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Command Injection</h4>
+                                <p>Executing arbitrary system commands through vulnerable application inputs.</p>
+                                <p><strong>Indicators:</strong> ; | && characters, command names (cat, whoami, wget)</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Path Traversal</h4>
+                                <p>Accessing files outside the intended directory using ../ sequences.</p>
+                                <p><strong>Indicators:</strong> ../../../, encoded dots (%2e), /etc/passwd, win.ini</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Brute Force</h4>
+                                <p>Systematically trying all possible passwords or keys until finding the correct one.</p>
+                                <p><strong>Indicators:</strong> Multiple failed logins, dictionary words, sequential attempts</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Credential Stuffing</h4>
+                                <p>Using leaked username/password pairs from other breaches to attempt logins.</p>
+                                <p><strong>Indicators:</strong> Failed logins for multiple usernames, varied passwords per user</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>DDoS (Distributed Denial of Service)</h4>
+                                <p>Overwhelming a target with traffic from multiple sources to cause service disruption.</p>
+                                <p><strong>Indicators:</strong> Traffic spikes, many source IPs, SYN floods, amplification patterns</p>
+                            </div>
+                            <div class="study-card">
+                                <h4>Man-in-the-Middle (MITM)</h4>
+                                <p>Intercepting communication between two parties to eavesdrop or modify data.</p>
+                                <p><strong>Indicators:</strong> Certificate warnings, ARP anomalies, DNS redirects</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quiz Mode Section -->
+            <section id="quiz-mode" class="section">
+                <h2>Timed Quiz Mode</h2>
+                <div class="instructions-box">
+                    <h4>How to Complete the Quiz</h4>
+                    <ol>
+                        <li>Configure your quiz settings: number of questions, time limit, question types, and difficulty</li>
+                        <li>Click <strong>"Start Quiz"</strong> to begin - the timer starts immediately</li>
+                        <li>Read each question carefully and select your answer before time runs out</li>
+                        <li>Click <strong>"Next"</strong> to proceed to the next question (or it auto-advances when time expires)</li>
+                        <li>After the final question, view your results and click <strong>"Review Answers"</strong> to see detailed explanations</li>
+                    </ol>
+                    <p><strong>Tip:</strong> Start with longer time limits and fewer questions, then challenge yourself with harder settings as you improve.</p>
+                </div>
+                <div class="quiz-setup" id="quizSetup">
+                    <h3>Quiz Configuration</h3>
+                    <div class="quiz-options">
+                        <div class="option-group">
+                            <label>Number of Questions:</label>
+                            <select id="quizQuestionCount">
+                                <option value="5">5 Questions</option>
+                                <option value="10" selected>10 Questions</option>
+                                <option value="15">15 Questions</option>
+                                <option value="20">20 Questions</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label>Time per Question:</label>
+                            <select id="quizTimeLimit">
+                                <option value="30">30 seconds</option>
+                                <option value="60" selected>60 seconds</option>
+                                <option value="90">90 seconds</option>
+                                <option value="120">120 seconds</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label>Question Types:</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" id="includeLog" checked> Log Analysis</label>
+                                <label><input type="checkbox" id="includeCvss" checked> CVSS Scoring</label>
+                                <label><input type="checkbox" id="includeCve" checked> CVE Analysis</label>
+                            </div>
+                        </div>
+                        <div class="option-group">
+                            <label>Difficulty:</label>
+                            <select id="quizDifficulty">
+                                <option value="all">Mixed Difficulty</option>
+                                <option value="beginner">Beginner Only</option>
+                                <option value="intermediate">Intermediate Only</option>
+                                <option value="advanced">Advanced Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-primary btn-large" id="startQuiz">Start Quiz</button>
+                </div>
+
+                <div class="quiz-active" id="quizActive" style="display:none;">
+                    <div class="quiz-header">
+                        <div class="quiz-progress">
+                            <span>Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="quizProgressBar" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="quiz-timer">
+                            <span class="timer-icon">⏱</span>
+                            <span id="quizTimer">60</span>s
+                        </div>
+                        <div class="quiz-score">
+                            Score: <span id="quizScore">0</span>
+                        </div>
+                    </div>
+
+                    <div class="quiz-question" id="quizQuestion">
+                        <!-- Question content populated by JS -->
+                    </div>
+
+                    <div class="quiz-actions">
+                        <button class="btn-secondary" id="skipQuestion">Skip</button>
+                        <button class="btn-primary" id="submitQuizAnswer" disabled>Submit</button>
+                    </div>
+                </div>
+
+                <div class="quiz-results" id="quizResults" style="display:none;">
+                    <h3>Quiz Complete!</h3>
+                    <div class="results-summary">
+                        <div class="result-stat">
+                            <span class="result-value" id="finalScore">0</span>
+                            <span class="result-label">Final Score</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-value" id="correctCount">0/10</span>
+                            <span class="result-label">Correct Answers</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-value" id="avgTime">0s</span>
+                            <span class="result-label">Avg Time/Question</span>
+                        </div>
+                    </div>
+                    <div class="results-breakdown" id="resultsBreakdown">
+                        <!-- Breakdown populated by JS -->
+                    </div>
+                    <div class="results-actions">
+                        <button class="btn-secondary" id="reviewQuiz">Review Answers</button>
+                        <button class="btn-primary" id="retakeQuiz">Take New Quiz</button>
+                    </div>
+                </div>
+
+                <!-- Review Modal -->
+                <div class="review-modal" id="reviewModal" style="display:none;">
+                    <div class="review-modal-content">
+                        <div class="review-modal-header">
+                            <h3>Quiz Review</h3>
+                            <button class="close-modal" id="closeReviewModal">&times;</button>
+                        </div>
+                        <div class="review-modal-body" id="reviewModalBody">
+                            <!-- Review content populated by JS -->
+                        </div>
+                        <div class="review-modal-footer">
+                            <div class="review-nav">
+                                <button class="btn-secondary" id="prevReviewQuestion" disabled>&larr; Previous</button>
+                                <span class="review-nav-info">Question <span id="reviewCurrentQ">1</span> of <span id="reviewTotalQ">10</span></span>
+                                <button class="btn-secondary" id="nextReviewQuestion">Next &rarr;</button>
+                            </div>
+                            <button class="btn-primary" id="closeReviewBtn">Close Review</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>CySA+ Exam Preparation Tool | Practice Log Analysis, CVSS Scoring & CVE Identification</p>
+        </footer>
+    </div>
+
+    <!-- Authentication Modal -->
+    <div class="auth-modal" id="authModal" style="display:none;">
+        <div class="auth-modal-content">
+            <div class="auth-header">
+                <h2>Welcome to CySA+ Exam Prep</h2>
+                <p>Sign in or create an account to track your progress</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-form="login">Sign In</button>
+                <button class="auth-tab" data-form="signup">Create Account</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginFormContainer">
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required placeholder="Enter password">
+                    </div>
+                    <div id="loginError" class="auth-message" style="display:none;"></div>
+                    <button type="submit" class="btn-primary btn-full">Sign In</button>
+                    <a href="#" id="forgotPasswordLink" class="forgot-password">Forgot password?</a>
+                </form>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupFormContainer" style="display:none;">
+                <form id="signupForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" required placeholder="Min 6 characters">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupConfirmPassword">Confirm Password</label>
+                        <input type="password" id="signupConfirmPassword" required placeholder="Confirm password">
+                    </div>
+                    <div id="signupError" class="auth-message" style="display:none;"></div>
+                    <button type="submit" class="btn-primary btn-full">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
